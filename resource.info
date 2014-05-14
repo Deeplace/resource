@@ -1,0 +1,7 @@
+name = "Resource"
+description = "Resource"
+package = "SIERUSS"
+core = "6.x"
+version = "6.x-1.0"
+dependencies[] = taxonomy_ext
+dependencies[] = section

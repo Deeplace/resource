@@ -1,0 +1,236 @@
+<?php
+
+/**
+ * Implements hook_schema()
+ */
+function resource_schema() {
+  $schema['resource'] = array(
+    'fields' => array(
+      'id'         => array('type' => 'serial',  'not null' => TRUE, 'unsigned' => TRUE),
+      'author_uid' => array('type' => 'int',     'not null' => TRUE, 'default' => 0),
+      'created'    => array('type' => 'int',     'not null' => TRUE, 'unsigned' => TRUE, 'default' => 0),
+      'modified'   => array('type' => 'int',     'not null' => TRUE, 'unsigned' => TRUE, 'default' => 0),
+    ),
+    'primary key' => array('id'),
+  );
+  
+  $schema['resource_sections'] = array(
+    'fields' => array(
+      'section_id'      => array('type' => 'int', 'not null' => TRUE, 'unsigned' => TRUE),
+      'orientation'     => array('type' => 'int', 'not null' => TRUE, 'default' => 0),
+      'order_by_field'  => array('type' => 'varchar', 'length' => 64, 'not null' => TRUE, 'default' => ''),
+      'order_direction' => array('type' => 'varchar', 'length' => 5, 'not null' => TRUE, 'default' => ''),
+    ),
+    'primary key' => array('section_id'),
+  );
+  
+  $schema['users_organizations'] = array(
+    'fields' => array(
+      'uid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+      'organization_id' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+    ),
+    'primary key' => array('uid', 'organization_id'),
+    'indexes' => array(
+      'organization_id' => array('organization_id'),
+    ),
+  );
+  
+  return $schema;
+}
+
+/**
+ * Implements hook_install()
+ */
+function resource_install() {
+  drupal_install_schema('resource');
+  resource_insert_section();
+}
+
+/**
+ * Implements hook_uninstall()
+ */
+function resource_uninstall() {
+  drupal_uninstall_schema('resource');
+  resource_delete_section();
+}
+
+function resource_insert_section() {
+  $languages = language_list('enabled');
+  
+  $section = (object) array(
+    'machine_name' => 'resource',
+    'table_name' => 'resource',
+    'remote_key' => '',
+    'locked' => 'resource',
+    'weight' => -20,
+    'type' => SECTION_TYPE_ONE_TO_ONE,
+    'status' => SECTION_STATUS_ENABLED,
+  );
+  drupal_write_record('sections', $section);
+  
+  $languages = language_list('enabled');
+  foreach ($languages[1] as $lang => $data) {
+    $details = array(
+      'section_id' => $section->id,
+      'language' => $lang,
+      'title' => 'Information',
+    );
+    drupal_write_record('section_details', $details);
+  }
+  
+  $weight = 0;
+  $field = (object) array(
+    'section_id' => $section->id,
+    'machine_name' => 'firstname',
+    'type' => 'textfield',
+    'weight' => $weight++,
+    'locked' => 'resource',
+    'searchable' => 1,
+    'status' => SECTION_STATUS_ENABLED,
+    'category' => 'General',
+    'sql_type' => 'VARCHAR(64)',
+    'field_size' => 40,
+    'min_lenght' => 0,
+    'max_lenght' => 0,
+    'required' => TRUE,
+    'default_value' => '',
+    'source' => '',
+  );
+  foreach ($languages[1] as $lang => $data) {
+    $field->details[$lang] = array(
+      'language' => $lang,
+      'title' => 'First name',
+      'description' => '',
+    );
+  }
+  section_field_save($field);
+  
+  $field = (object) array(
+    'section_id' => $section->id,
+    'machine_name' => 'lastname',
+    'type' => 'textfield',
+    'weight' => $weight++,
+    'locked' => 'resource',
+    'searchable' => 1,
+    'status' => SECTION_STATUS_ENABLED,
+    'category' => 'General',
+    'sql_type' => 'VARCHAR(64)',
+    'field_size' => 40,
+    'min_lenght' => 0,
+    'max_lenght' => 0,
+    'required' => TRUE,
+    'default_value' => '',
+    'source' => '',
+  );
+  foreach ($languages[1] as $lang => $data) {
+    $field->details[$lang] = array(
+      'language' => $lang,
+      'title' => 'Last name',
+      'description' => '',
+    );
+  }
+  section_field_save($field);
+  
+  $field = (object) array(
+    'section_id' => $section->id,
+    'machine_name' => 'idnp',
+    'type' => 'textfield',
+    'weight' => $weight++,
+    'locked' => 'resource',
+    'searchable' => 1,
+    'status' => SECTION_STATUS_ENABLED,
+    'category' => '',
+    'sql_type' => 'VARCHAR(20)',
+    'field_size' => 40,
+    'min_lenght' => 0,
+    'max_lenght' => 0,
+    'required' => TRUE,
+    'default_value' => '',
+    'source' => '',
+  );
+  foreach ($languages[1] as $lang => $data) {
+    $field->details[$lang] = array(
+      'language' => $lang,
+      'title' => 'IDNP',
+      'description' => '',
+    );
+  }
+  section_field_save($field);
+  
+  $field = (object) array(
+    'section_id' => $section->id,
+    'machine_name' => 'birthdate',
+    'type' => 'date',
+    'weight' => $weight++,
+    'locked' => 'resource',
+    'searchable' => 1,
+    'status' => SECTION_STATUS_ENABLED,
+    'category' => '',
+    'sql_type' => 'DATE',
+    'field_size' => 40,
+    'min_lenght' => 0,
+    'max_lenght' => 0,
+    'required' => TRUE,
+    'default_value' => '',
+    'source' => '',
+  );
+  foreach ($languages[1] as $lang => $data) {
+    $field->details[$lang] = array(
+      'language' => $lang,
+      'title' => 'Birthdate',
+      'description' => '',
+    );
+  }
+  section_field_save($field);
+  
+  $field = (object) array(
+    'section_id' => $section->id,
+    'machine_name' => 'sex',
+    'type' => 'select',
+    'weight' => $weight++,
+    'locked' => 'resource',
+    'searchable' => 1,
+    'status' => SECTION_STATUS_ENABLED,
+    'category' => '',
+    'sql_type' => 'INT',
+    'field_size' => 40,
+    'min_lenght' => 0,
+    'max_lenght' => 0,
+    'required' => TRUE,
+    'default_value' => '1',
+    'source' => "0|Female\n1|Male",
+  );
+  foreach ($languages[1] as $lang => $data) {
+    $field->details[$lang] = array(
+      'language' => $lang,
+      'title' => 'Sex',
+      'description' => '',
+    );
+  }
+  section_field_save($field);
+}
+
+function resource_delete_section() {
+  // Remove locked table
+  $result = db_query("SELECT id, table_name FROM {sections} WHERE locked = 'resource'");
+  while ($data = db_fetch_object($result)) {
+    if (db_table_exists($data->table_name)) {
+      db_query("DROP TABLE {" . $data->table_name . "}");
+    }
+    db_query("DELETE FROM {section_field_details} WHERE field_id IN (SELECT id FROM {section_fields} WHERE section_id = %d)", $data->id);
+    db_query("DELETE FROM {section_fields} WHERE section_id = %d", $data->id);
+    db_query("DELETE FROM {section_details} WHERE section_id = %d", $data->id);
+    db_query("DELETE FROM {sections} WHERE id = %d", $data->id);
+  }
+  
+  // Remove left locked fields
+  $sql = "SELECT f.id, f.machine_name, s.table_name FROM {section_fields} f
+    INNER JOIN {sections} s ON s.id = f.section_id
+    WHERE f.locked = 'resource'";
+  $result = db_query($sql);
+  while ($data = db_fetch_object($result)) {
+    db_query("ALTER TABLE {" . $data->table_name . "} DROP COLUMN " . $data->machine_name);
+    db_query("DELETE FROM {section_field_details} WHERE field_id = %d", $data->id);
+    db_query("DELETE FROM {section_fields} WHERE id = %d", $data->id);
+  }
+}

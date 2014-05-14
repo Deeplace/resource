@@ -1,0 +1,280 @@
+<?php
+
+require_once 'resource.api.inc';
+
+/**
+ * Implements hook_perm()
+ */
+function resource_perm() {
+  $perms = array(
+    'resource admin',
+    'resource access',
+  );
+  
+  $sections = resource_get_sections();
+  foreach ($sections as $section) {
+    $perms[] = 'resource add ' . $section;
+    $perms[] = 'resource view ' . $section;
+    $perms[] = 'resource edit ' . $section;
+    $perms[] = 'resource delete ' . $section;
+  }
+  
+  return $perms;
+}
+
+/**
+ * Implements hook_menu()
+ */
+function resource_menu() {
+  $items = array();
+  
+  $items['resource'] = array(
+    'title'            => 'Resources',
+    'page callback'    => 'resource_list_page',
+    'access arguments' => array('resource access'),
+    'type'             => MENU_CALLBACK,
+    'file'             => 'resource.pages.inc',
+  );
+  
+  $items['resource/view'] = array(
+    'title'            => 'View',
+    'type'             => MENU_DEFAULT_LOCAL_TASK,
+    'weight'           => 0,
+    'file'             => 'resource.pages.inc',
+  );
+  
+  $items['resource/add'] = array(
+    'title'            => 'Add',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('resource_edit_form', 'resource'),
+    'access callback'  => 'resource_check_access',
+    'access arguments' => array('add', 'resource'),
+    'type'             => MENU_LOCAL_TASK,
+    'weight'           => 1,
+    'file'             => 'resource.forms.inc',
+  );
+  
+  $items['resource/export'] = array(
+    'title'            => 'Export resources',
+    'page callback'    => 'resource_export_page',
+    'access arguments' => array('resource access'),
+    'type'             => MENU_CALLBACK,
+    'file'             => 'resource.pages.inc',
+  );
+  
+  $items['resource/%'] = array(
+    'title'            => 'Resource',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('resource_view_form', 'resource', 1),
+    'access callback'  => 'resource_check_access',
+    'access arguments' => array('view', 'resource', 1),
+    'type'             => MENU_CALLBACK,
+    'file'             => 'resource.forms.inc',
+  );
+  
+  $items['resource/%/view'] = array(
+    'title callback'   => 'resource_get_title',
+    'title arguments'  => array('resource', 'view'),
+    'type'             => MENU_DEFAULT_LOCAL_TASK,
+    'weight'           => 0,
+  );
+  
+  $items['resource/%/edit'] = array(
+    'title'            => 'Edit',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('resource_edit_form', 'resource', 1),
+    'access callback'  => 'resource_check_access',
+    'access arguments' => array('edit', 'resource', 1),
+    'type'             => MENU_CALLBACK,
+    'file'             => 'resource.forms.inc',
+  );
+  
+  $items['resource/%/delete'] = array(
+    'title'            => 'Delete resource',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('resource_delete_form', 'resource', 1),
+    'access callback'  => 'resource_check_access',
+    'access arguments' => array('delete', 'resource', 1),
+    'type'             => MENU_CALLBACK,
+    'file'             => 'resource.forms.inc',
+  );
+  
+  $weight = 2;
+  $sections = resource_get_sections();
+  foreach ($sections as $section) {
+    if ($section != 'resource') {
+      $items['resource/%/' . $section] = array(
+        'title callback'   => 'resource_get_title',
+        'title arguments'  => array($section, 'view'),
+        'page callback'    => 'drupal_get_form',
+        'page arguments'   => array('resource_view_form', $section, 1),
+        'access callback'  => 'resource_check_access',
+        'access arguments' => array('view', $section, 1),
+        'type'             => MENU_LOCAL_TASK,
+        'weight'           => $weight++,
+        'file'             => 'resource.forms.inc',
+      );
+      
+      $items['resource/%/' . $section . '/add'] = array(
+        'title'            => 'Add',
+        'page callback'    => 'drupal_get_form',
+        'page arguments'   => array('resource_edit_form', $section, 1),
+        'access callback'  => 'resource_check_access',
+        'access arguments' => array('add', $section, 1),
+        'type'             => MENU_CALLBACK,
+        'file'             => 'resource.forms.inc',
+      );
+      
+      $items['resource/%/' . $section . '/%/edit'] = array(
+        'title'            => 'Edit',
+        'page callback'    => 'drupal_get_form',
+        'page arguments'   => array('resource_edit_form', $section, 1, 3),
+        'access callback'  => 'resource_check_access',
+        'access arguments' => array('edit', $section, 1),
+        'type'             => MENU_CALLBACK,
+        'file'             => 'resource.forms.inc',
+      );
+      
+      $items['resource/%/' . $section . '/%/delete'] = array(
+        'title'            => 'Delete resource',
+        'page callback'    => 'drupal_get_form',
+        'page arguments'   => array('resource_delete_form', $section, 1, 3),
+        'access callback'  => 'resource_check_access',
+        'access arguments' => array('delete', $section, 1),
+        'type'             => MENU_CALLBACK,
+        'file'             => 'resource.forms.inc',
+      );
+    }
+  }
+  
+  $items['resource/js'] = array(
+    'title'            => 'Javascript Form',
+    'page callback'    => 'resource_filter_js',
+    'access arguments' => array('resource access'),
+    'type'             => MENU_CALLBACK,
+    'file'             => 'resource.pages.inc',
+  );
+  
+  $items['admin/build/section/%section/resource'] = array(
+    'title'            => 'Resource extension',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('resource_extend_section_form', 3),
+    'access arguments' => array('section admin'),
+    'type'             => MENU_LOCAL_TASK,
+    'weight'           => 2,
+    'file'             => 'resource.forms.inc',
+  );
+  
+  return $items;
+}
+
+/**
+ * Implements hook_theme()
+ */
+function resource_theme($existing, $type, $theme, $path) {
+  return array(
+    'resource_columns_form' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'resource.pages.php',
+    ),
+    'resource_filter_form_grid' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'resource.pages.php',
+    ),
+  );
+}
+
+/**
+ * Implements hook_user()
+ */
+function resource_user($op, &$edit, &$account, $category = NULL) {
+  switch ($op) {
+    case 'load':
+      $account->organization_id = resource_get_user_organization($account->uid);
+      break;
+      
+    case 'view':
+      if (!empty($account->organization_id)) {
+        $list = resource_load_organizations();
+        $account->content['organization'] = array(
+          '#type' => 'user_profile_item',
+          '#title' => t('Organization'),
+          '#value' => $list[$account->organization_id],
+          '#weight' => -12,
+        );
+      }
+      break;
+      
+    case 'form':
+      if ($category == 'account') {
+        if (user_access('resource admin')) {
+          $list = resource_load_organizations();
+          $form['account']['organization_id'] = array(
+            '#type' => 'select',
+            '#title' => t('Organization'),
+            '#options' => array('' => t('- None -')) + $list,
+            '#weight' => 20,
+            '#default_value' => $account->organization_id,
+          );
+          return $form;
+        }
+        elseif (!empty($account->organization_id)) {
+          $list = resource_load_organizations();
+          $form['organization_id'] = array(
+            '#type' => 'item',
+            '#title' => t('Organization'),
+            '#value' => $list[$account->organization_id],
+          );
+          return $form;
+        }
+      }
+      break;
+      
+    case 'insert':
+    case 'update':
+      if (user_access('resource admin')) {
+        db_query("DELETE FROM {users_organizations} WHERE uid = %d", $account->uid);
+        if (!empty($edit['organization_id'])) {
+          $sql = "INSERT INTO {users_organizations} (uid, organization_id) VALUES (%d, %d)";
+          db_query($sql, $account->uid, $edit['organization_id']);
+        }
+        unset($edit['organization_id']);
+      }
+      break;
+      
+    case 'delete':
+      db_query("DELETE FROM {users_organizations} WHERE uid = %d", $account->uid);
+      break;
+  }
+}
+
+function resource_get_title($section_machine_name, $action) {
+  $section = section_load($section_machine_name);
+  if (!empty($section)) {
+    global $language;
+    
+    return empty($section->details[$language->language]['title']) ?
+      $section->machine_name : $section->details[$language->language]['title'];
+  }
+  
+  return $section_machine_name;
+}
+
+function resource_check_access($op, $section, $resource_id = 0) {
+  if (user_access('resource admin')) {
+    return TRUE;
+  }
+  
+  if (user_access('resource access')) {
+    if (user_access('resource ' . $op . ' ' . $section)) {
+      if ($resource_id) {
+        global $user;
+        return (bool) db_query("SELECT 1 FROM {employment} WHERE resource_id = %d AND organization_id = %d",
+          $resource_id, resource_get_user_organization($user->uid));
+      }
+      return TRUE;
+    }
+  }
+  
+  return FALSE;
+}
